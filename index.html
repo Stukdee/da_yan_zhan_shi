@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大衍占筮</title>
+    <style>
+        @font-face {
+            font-family: 'GuFeng';
+            src: url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap');
+        }
+        
+        /* 动画定义 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        body {
+            font-family: 'Ma Shan Zheng', cursive, 'SimSun', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f4e9;
+            color: #5a3e2a;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.05"><path d="M0,0 L100,100 M100,0 L0,100" stroke="%235a3e2a" stroke-width="1"/></svg>');
+        }
+        .line-result {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #d4b483;
+            border-radius: 8px;
+            background-color: rgba(255, 253, 245, 0.9);
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .line-result::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #8c6e4a, #d4b483, #8c6e4a);
+        }
+        .gua-container {
+            margin-top: 30px;
+            padding: 25px;
+            border: 1px solid #d4b483;
+            border-radius: 10px;
+            text-align: center;
+            background-color: rgba(255, 253, 245, 0.9);
+            position: relative;
+            animation: scaleIn 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .gua-container::before, .gua-container::after {
+            content: "⚪";
+            position: absolute;
+            top: 10px;
+            color: #8c6e4a;
+            font-size: 20px;
+        }
+        
+        .gua-container::before {
+            left: 10px;
+        }
+        
+        .gua-container::after {
+            right: 10px;
+        }
+        .yang-line, .yin-line {
+            font-family: 'SimSun', serif;
+            font-size: 24px;
+            line-height: 1.5;
+            opacity: 0;
+            animation: lineAppear 0.4s ease-out forwards;
+            animation-delay: calc(var(--line-index) * 0.1s);
+        }
+        
+        @keyframes lineAppear {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .yang-line {
+            color: #d00;
+        }
+        .yin-line {
+            color: #00d;
+        }
+        .container {
+            text-align: center;
+            background-color: rgba(255, 253, 245, 0.8);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(90, 62, 42, 0.1);
+            border: 1px solid #d4b483;
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            margin: 15px;
+            background-color: #8c6e4a;
+            color: #f8f4e9;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Ma Shan Zheng', cursive;
+            box-shadow: 0 4px 8px rgba(90, 62, 42, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: #5a3e2a;
+            transform: translateY(-2px);
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>大衍占筮</h1>
+        <div id="result"></div>
+        <button id="startBtn">开始占筮</button>
+    </div>
+
+    <script>
+        document.getElementById('startBtn').addEventListener('click', function() {
+            const lines = [];
+            let fullResult = "<h2>大衍占筮六爻结果</h2>";
+            
+            for (let i = 0; i < 6; i++) {
+                const result = performDayanDivination();
+                fullResult += `<div class='line-result'>${result}</div>`;
+                
+                // 提取爻的类型用于绘制卦象
+                const lineMatch = result.match(/结果：(.*)/);
+                if (lineMatch) {
+                    lines.push(lineMatch[1]);
+                }
+            }
+            
+            // 绘制完整卦象
+            fullResult += `<div class='gua-container'><h3>卦象</h3>`;
+            
+            // 从下往上绘制六爻
+            const guaCode = [];
+            for (let i = 5; i >= 0; i--) {
+                const lineIndex = 5 - i;
+                if (lines[i].includes('阳')) {
+                    fullResult += `<div class='yang-line' style="--line-index: ${lineIndex}">———</div>`;
+                    guaCode.push(1); // 阳爻为1
+                } else {
+                    fullResult += `<div class='yin-line' style="--line-index: ${lineIndex}">— —</div>`;
+                    guaCode.push(0); // 阴爻为0
+                }
+            }
+            
+            // 识别卦名
+            const guaName = identifyGua(guaCode);
+            fullResult += `<h3>卦名：${guaName}</h3></div>`;
+            
+            // 清空结果区域并添加动画
+            const resultElement = document.getElementById('result');
+            resultElement.innerHTML = '';
+            resultElement.style.opacity = 0;
+            
+            // 分批添加内容以创建序列动画效果
+            setTimeout(() => {
+                resultElement.innerHTML = fullResult;
+                resultElement.style.opacity = 1;
+            }, 100);
+        });
+
+        // 六十四卦识别函数
+        function identifyGua(guaCode) {
+            // 将六爻二进制转换为十进制索引
+            const index = parseInt(guaCode.join(''), 2);
+            
+            // 六十四卦名称
+            const guaNames = [
+                "坤为地", "地雷复", "地水师", "地泽临", "地山谦", "地火明夷", "地风升", "地天泰",
+                "雷地豫", "震为雷", "雷水解", "雷泽归妹", "雷山小过", "雷火丰", "雷风恒", "雷天大壮",
+                "水地比", "水雷屯", "坎为水", "水泽节", "水山蹇", "水火既济", "水风井", "水天需",
+                "泽地萃", "泽雷随", "泽水困", "兑为泽", "泽山咸", "泽火革", "泽风大过", "泽天夬",
+                "山地剥", "山雷颐", "山水蒙", "山泽损", "艮为山", "山火贲", "山风蛊", "山天大畜",
+                "火地晋", "火雷噬嗑", "火水未济", "火泽睽", "火山旅", "离为火", "火风鼎", "火天大有",
+                "风地观", "风雷益", "风水涣", "风泽中孚", "风山渐", "风火家人", "巽为风", "风天小畜",
+                "天地否", "天雷无妄", "天水讼", "天泽履", "天山遁", "天火同人", "天风姤", "乾为天"
+            ];
+            
+            return guaNames[index] || "未知卦象";
+        }
+        
+        function performDayanDivination() {
+            // 大衍占筮算法实现
+            const steps = [];
+            let remaining = 49;
+            
+            for (let i = 0; i < 3; i++) {
+                // 分而为二以象两
+                const left = Math.floor(Math.random() * (remaining - 1)) + 1;
+                const right = remaining - left;
+                
+                // 挂一以象三
+                const takeOne = 1;
+                remaining -= takeOne;
+                
+                // 揲之以四以象四时
+                const leftRemainder = left % 4 || 4;
+                const rightRemainder = right % 4 || 4;
+                
+                // 归奇于扐以象闰
+                const totalRemoved = leftRemainder + rightRemainder + takeOne;
+                remaining -= totalRemoved;
+                
+                steps.push({
+                    iteration: i+1,
+                    left: left,
+                    right: right,
+                    takeOne: takeOne,
+                    leftRemainder: leftRemainder,
+                    rightRemainder: rightRemainder,
+                    totalRemoved: totalRemoved,
+                    remaining: remaining
+                });
+            }
+            
+            // 根据剩余数确定爻的类型
+            const lineType = Math.floor(remaining / 4);
+            let line;
+            
+            if (lineType === 6) {
+                line = "老阴（变爻）";
+            } else if (lineType === 7) {
+                line = "少阳";
+            } else if (lineType === 8) {
+                line = "少阴";
+            } else if (lineType === 9) {
+                line = "老阳（变爻）";
+            } else {
+                line = "无法确定爻的类型";
+            }
+            
+            let result = "<h3>占筮过程</h3>";
+            steps.forEach(step => {
+                result += `<p>第${step.iteration}变：
+                    分两堆 ${step.left}与${step.right}，
+                    取一 ${step.takeOne}，
+                    四揲余 ${step.leftRemainder}与${step.rightRemainder}，
+                    共去 ${step.totalRemoved}，
+                    剩余 ${step.remaining}</p>`;
+            });
+            
+            result += `<h3>结果：${line}</h3>`;
+            return result;
+        }
+    </script>
+</body>
+</html>
